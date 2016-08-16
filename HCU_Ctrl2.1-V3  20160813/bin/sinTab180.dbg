@@ -1,0 +1,149 @@
+;/****************************************************************************************************
+;*
+;*  Motorola Inc.
+;*  (c) Copyright 2000 Motorola Inc.
+;*  ALL RIGHTS RESERVED.
+;*
+;*****************************************************************************************************
+;*
+;*
+;*  File Name:   sinTab180.asm
+;*  
+;*  Description: This file contains look-up table describing the first quadrant of sine period.
+;*               Tables are used for calculating Sine and Cosine functions.
+;*
+;*
+;*****************************************************************************************************/
+
+
+  XDEF sinLut_8b_128
+
+sinLut_8b_128:
+  dc.b	1
+  dc.b	3
+  dc.b	6
+  dc.b	9
+  dc.b	12
+  dc.b	16
+  dc.b	19
+  dc.b	22
+  dc.b	25
+  dc.b	28
+  dc.b	31
+  dc.b	34
+  dc.b	37
+  dc.b	40
+  dc.b	43
+  dc.b	46
+  dc.b	49
+  dc.b	51
+  dc.b	54
+  dc.b	57
+  dc.b	60
+  dc.b	63
+  dc.b	65
+  dc.b	68
+  dc.b	71
+  dc.b	73
+  dc.b	76
+  dc.b	78
+  dc.b	81
+  dc.b	83
+  dc.b	85
+  dc.b	88
+  dc.b	90
+  dc.b	92
+  dc.b	94
+  dc.b	96
+  dc.b	98
+  dc.b	100
+  dc.b	102
+  dc.b	104
+  dc.b	106
+  dc.b	107
+  dc.b	109
+  dc.b	110
+  dc.b	112
+  dc.b	113
+  dc.b	115
+  dc.b	116
+  dc.b	117
+  dc.b	118
+  dc.b	120
+  dc.b	121
+  dc.b	122
+  dc.b	122
+  dc.b	123
+  dc.b	124
+  dc.b	125
+  dc.b	125
+  dc.b	126
+  dc.b	126
+  dc.b	126
+  dc.b	127
+  dc.b	127
+  dc.b	127
+  dc.b	127
+  dc.b	127
+  dc.b	127
+  dc.b	127
+  dc.b	126
+  dc.b	126
+  dc.b	126
+  dc.b	125
+  dc.b	125
+  dc.b	124
+  dc.b	123
+  dc.b	122
+  dc.b	122
+  dc.b	121
+  dc.b	120
+  dc.b	119
+  dc.b	117
+  dc.b	116
+  dc.b	115
+  dc.b	113
+  dc.b	112
+  dc.b	111
+  dc.b	109
+  dc.b	107
+  dc.b	106
+  dc.b	104
+  dc.b	102
+  dc.b	100
+  dc.b	98
+  dc.b	96
+  dc.b	94
+  dc.b	92
+  dc.b	90
+  dc.b	88
+  dc.b	85
+  dc.b	83
+  dc.b	81
+  dc.b	78
+  dc.b	76
+  dc.b	73
+  dc.b	71
+  dc.b	68
+  dc.b	65
+  dc.b	63
+  dc.b	60
+  dc.b	57
+  dc.b	54
+  dc.b	52
+  dc.b	49
+  dc.b	46
+  dc.b	43
+  dc.b	40
+  dc.b	37
+  dc.b	34
+  dc.b	31
+  dc.b	28
+  dc.b	25
+  dc.b	22
+  dc.b	19
+  dc.b	16
+  dc.b	13
+  dc.b	10
+  dc.b	6
+  dc.b	3

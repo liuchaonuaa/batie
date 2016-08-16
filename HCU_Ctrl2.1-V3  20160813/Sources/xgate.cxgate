@@ -1,0 +1,506 @@
+#include <hidef.h>      /* common defines and macros */
+#include "xgate.h"
+
+
+
+// put your handler variables here
+
+#define analog_semaphore_xgate 0
+#define dout_semaphore_xgate 1
+#define din_semaphore_xgate 2
+#define can_semaphore_xgate 3
+#define pwm_semaphore_xgate 4
+
+     #define OPEN 0x55
+     #define LOCKED 0xAA
+
+
+
+Word analog_channel0_temp[8];
+Word analog_channel1_temp[8];
+Word analog_channel2_temp[8];
+Word analog_channel3_temp[8];
+Word analog_channel4_temp[8];
+Word analog_channel5_temp[8];
+Word analog_channel6_temp[8];
+Word analog_channel7_temp[8];
+Word analog_channel8_temp[8];
+Word analog_channel9_temp[8];
+
+Byte analog_counter;
+Byte xgate_pc_counter;
+Byte can_delaytime;
+
+
+typedef struct {
+  int counter;
+} MyDataType;
+
+static MyDataType MyData= {
+  0
+};
+
+// interrupt handler
+interrupt void SoftwareTrigger0_Handler(MyDataType* __restrict pData) {
+  
+  // put your own code here
+  pData->counter++;
+  if (pData->counter > 100)  {
+    pData->counter= 0; 
+
+  }
+}
+
+
+void FeedWatchDog(void) //喂狗
+{
+	ARMCOP = 0x55;
+	ARMCOP = 0xAA;
+	
+}
+
+
+/***********************************************************************************************
+ *                                                                                             *
+ *                              Xgate Interrupt ISR                                            *
+ *                                                                                             *
+ * 函 数 名:                                                                                   *
+ * 功能描述:协处理器中断服务函数                                                               *
+ * 全局变量:                                                                                   *
+ * 输		 入:                                                                                   *
+ * 输		 出:                                                                                   *
+ * 编    辑： ---                                                                 *
+ * 修 改 人：  			 						 	                                                             *
+ * 修改日期：                                                                                  *
+ * 函数说明:                                                                                   *
+ /**********************************************************************************************/
+
+ 
+interrupt void Timer_Interrupt1_isr(void)    //周期中断1ms   用于CAN通讯发送
+ { 
+    xgate_pc_counter++;
+    Analog_channle_scan();
+    
+    if((xgate_pc_counter%2)==0) //2ms
+    {
+       xgate_pc_2ms =  OPEN;
+    }
+    
+    if((xgate_pc_counter%10)==0)  //10ms
+    {
+        xgate_pc_10ms =  OPEN;
+    }
+    
+    if((xgate_pc_counter%20)==0)  //20ms
+    {
+        xgate_pc_20ms =  OPEN;
+        
+ 
+   
+    PORTB_PB1 = ~PORTB_PB1;
+
+    Analog_channel_sum();
+    }
+    
+    if((xgate_pc_counter%50)==0)   //50ms
+    {
+        xgate_pc_50ms =  OPEN;
+    }
+    
+    if((xgate_pc_counter%100)==0)  //100ms
+    {
+        xgate_pc_100ms =  OPEN;
+    }
+    
+    if((xgate_pc_counter%200)==0)  //200ms
+    {
+        xgate_pc_200ms =  OPEN;
+    }
+    
+    if((xgate_pc_counter%500)==0)   //500ms
+    {
+        xgate_pc_500ms =  OPEN;
+    }
+ 
+  
+   PITTF = 0x02;
+ }
+ 
+ 
+
+ 
+interrupt void Din_ISR()
+{
+
+ 
+ XGSWT  = 0x4000;//清中断标志位
+
+}
+interrupt void Dout_ISR()
+{
+
+
+ XGSWT  = 0x2000;//清中断标志位
+
+}
+
+interrupt void AD_ISR()
+{
+ Analog_channle_scan();
+
+ 
+ XGSWT  = 0x0200;//清中断标志位
+
+}
+
+
+
+interrupt void CAN_send_ISR()
+{
+
+
+
+ XGSWT  = 0x1000;//清中断标志位
+ }
+
+
+interrupt void PWM_updata_ISR()
+{
+ shared_counter++;
+ PWM_duty_updata_xgate_16bit(pwm_num,pwm_value);
+ XGSWT  = 0x0800;//清中断标志位
+ }
+
+
+
+
+
+
+
+
+
+
+
+
+/***********************************************************************************************
+ *                                                                                             *
+ *                              Xgate Basic Function                                           *
+ *                                                                                             *
+ * 函 数 名:                                                                                   *
+ * 功能描述: 协处理器任务函数                                                                          *
+ * 全局变量:                                                                                   *
+ * 输		 入:                                                                                   *
+ * 输		 出:                                                                                   *
+ * 编    辑： ---                                                                 *
+ * 修 改 人：  			 						 	                                                             *
+ * 修改日期：                                                                                  *
+ * 函数说明:                                                                                   *
+ /**********************************************************************************************/
+
+//------------------------------------模拟量扫描-----------------------------------------------
+ /***********************************************************************************************
+ *                                                                                             *
+ *                              Xgate Basic Function                                           *
+ *                                                                                             *
+ * 函 数 名:                                                                                   *
+ * 功能描述: 协处理器任务函数                                                                          *
+ * 全局变量:                                                                                   *
+ * 输		 入:                                                                                   *
+ * 输		 出:                                                                                   *
+ * 编    辑： ---                                                                 *
+ * 修 改 人：  			 						 	                                                             *
+ * 修改日期：                                                                                  *
+ * 函数说明:                                                                                   *
+ /**********************************************************************************************/
+
+//------------------------------------模拟量扫描-----------------------------------------------
+
+
+void  Analog_channle_scan(void)   
+{ 
+   while(!ATD0STAT0_SCF) {;}
+   analog_channel0_temp[analog_counter] = ATD0DR0;
+   analog_channel1_temp[analog_counter] = ATD0DR1;
+   analog_channel2_temp[analog_counter] = ATD0DR2;
+   analog_channel3_temp[analog_counter] = ATD0DR3;
+   analog_channel4_temp[analog_counter] = ATD0DR4;
+   analog_channel5_temp[analog_counter] = ATD0DR5;
+   analog_channel6_temp[analog_counter] = ATD0DR6;
+   analog_channel7_temp[analog_counter] = ATD0DR7;
+   analog_channel8_temp[analog_counter] = ATD0DR8;
+   analog_channel9_temp[analog_counter] = ATD0DR9;
+   
+   analog_counter++; 
+   if(analog_counter==8) analog_counter=0;
+   
+}
+
+
+
+void Analog_channel_sum(void)        //
+{   int i;
+    while (!_ssem(analog_semaphore_xgate));
+    for(i=0;i<10;i++)
+    {
+      analog_channel[i] =0;
+    }
+    for(i=0;i<8;i++) 
+    {
+      analog_channel[0]+= analog_channel0_temp[i];
+      analog_channel[1]+= analog_channel1_temp[i];
+      analog_channel[2]+= analog_channel2_temp[i];
+      analog_channel[3]+= analog_channel3_temp[i];
+      analog_channel[4]+= analog_channel4_temp[i];
+      analog_channel[5]+= analog_channel5_temp[i];
+      analog_channel[6]+= analog_channel6_temp[i];
+      analog_channel[7]+= analog_channel7_temp[i];
+      analog_channel[8]+= analog_channel8_temp[i];
+      analog_channel[9]+= analog_channel9_temp[i];
+     }
+    _csem(analog_semaphore_xgate);
+
+}
+
+
+  
+float NomalFilter(float signal, float prevsignal1, float prevsignal2, float prevsignal3)//滤波函数
+{
+    float K_ff1 = 0.5;
+    float K_ff2 = 0.25;
+    float K_ff3 = 0.15;
+    float K_ff4 = 0.1;
+	return(K_ff1*signal+K_ff2*prevsignal1+K_ff3*prevsignal2+K_ff4*prevsignal3);
+}
+
+
+
+//-------------------------------------------CAN发送-------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-----------------------------PWM值更新------------------------------------------------------
+
+
+
+
+
+int PWM_duty_updata_xgate_16bit(Byte channel_num,Word value)
+{
+  switch(channel_num)
+ {
+    
+  case 1: 
+    PWMDTY01 =  value;
+    break;
+     
+  case 3:
+   PWMDTY23 =   value;
+    break;
+  
+  case 5:
+   PWMDTY45 =   value;
+    break ;
+  
+  case 7:
+   PWMDTY67 =   value;
+    break;
+  
+  default:break;
+ }
+ 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//--------------------------------------------CAN接收-----------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------------------------
+// interrupt handler for all others
+interrupt void ErrorHandler(int dataptr) {
+  int chanNum= dataptr;
+  asm BRK;
+}
+
+#pragma CONST_SEG XGATE_VECTORS  /* assign the vector table in separate segment for dedicated placement in linker parameter file */
+
+const XGATE_TableEntry XGATE_VectorTable[] = {
+                         // Channel # = Vector address / 2
+  /* channel 0..8 are not used, first used must match macro XGATE_VECTOR_OFFSET in xgate.h */
+  {ErrorHandler, 0x09},  // Channel 09 - Reserved
+  {ErrorHandler, 0x0A},  // Channel 0A - Reserved
+  {ErrorHandler, 0x0B},  // Channel 0B - Reserved
+  {ErrorHandler, 0x0C},  // Channel 0C - Reserved
+  {ErrorHandler, 0x0D},  // Channel 0D - Reserved
+  {ErrorHandler, 0x0E},  // Channel 0E - Reserved
+  {ErrorHandler, 0x0F},  // Channel 0F - Reserved
+  {ErrorHandler, 0x10},  // Channel 10 - Reserved
+  {ErrorHandler, 0x11},  // Channel 11 - Reserved
+  {ErrorHandler, 0x12},  // Channel 12 - Reserved
+  {ErrorHandler, 0x13},  // Channel 13 - Reserved
+  {ErrorHandler, 0x14},  // Channel 14 - Reserved
+  {ErrorHandler, 0x15},  // Channel 15 - Reserved
+  {ErrorHandler, 0x16},  // Channel 16 - Reserved
+  {ErrorHandler, 0x17},  // Channel 17 - Reserved
+  {ErrorHandler, 0x18},  // Channel 18 - Reserved
+  {ErrorHandler, 0x19},  // Channel 19 - Reserved
+  {ErrorHandler, 0x1A},  // Channel 1A - Reserved
+  {ErrorHandler, 0x1B},  // Channel 1B - Reserved
+  {ErrorHandler, 0x1C},  // Channel 1C - Reserved
+  {ErrorHandler, 0x1D},  // Channel 1D - Reserved
+  {ErrorHandler, 0x1E},  // Channel 1E - Reserved
+  {ErrorHandler, 0x1F},  // Channel 1F - Reserved
+  {ErrorHandler, 0x20},  // Channel 20 - Reserved
+  {ErrorHandler, 0x21},  // Channel 21 - Reserved
+  {ErrorHandler, 0x22},  // Channel 22 - Reserved
+  {ErrorHandler, 0x23},  // Channel 23 - Reserved
+  {ErrorHandler, 0x24},  // Channel 24 - Reserved
+  {ErrorHandler, 0x25},  // Channel 25 - Reserved
+  {ErrorHandler, 0x26},  // Channel 26 - Reserved
+  {ErrorHandler, 0x27},  // Channel 27 - Reserved
+  {ErrorHandler, 0x28},  // Channel 28 - Reserved
+  {ErrorHandler, 0x29},  // Channel 29 - Reserved
+  {ErrorHandler, 0x2A},  // Channel 2A - Reserved
+  {ErrorHandler, 0x2B},  // Channel 2B - Reserved
+  {ErrorHandler, 0x2C},  // Channel 2C - Reserved
+  {ErrorHandler, 0x2D},  // Channel 2D - Reserved
+  {ErrorHandler, 0x2E},  // Channel 2E - Reserved
+  {ErrorHandler, 0x2F},  // Channel 2F - Reserved
+  {ErrorHandler, 0x30},  // Channel 30 - XSRAM20K Access Violation
+  {ErrorHandler, 0x31},  // Channel 31 - XGATE Software Error Interrupt     
+  {ErrorHandler, 0x32},  // Channel 32 - XGATE Software Trigger 7           
+  //{ErrorHandler, 0x33},  // Channel 33 - XGATE Software Trigger 6 
+  {(XGATE_Function)Din_ISR, 0x33},          
+  //{ErrorHandler, 0x34},  // Channel 34 - XGATE Software Trigger 5 
+  {(XGATE_Function)Dout_ISR, 0x34},          
+  //{ErrorHandler, 0x35},  // Channel 35 - XGATE Software Trigger 4 
+  {(XGATE_Function)CAN_send_ISR, 0x35},          
+  //{ErrorHandler, 0x36},  // Channel 36 - XGATE Software Trigger 3
+  {(XGATE_Function)PWM_updata_ISR, 0x36},           
+  {ErrorHandler, 0x37},  // Channel 37 - XGATE Software Trigger 2           
+  //{ErrorHandler, 0x38},  // Channel 38 - XGATE Software Trigger 1  
+  {(XGATE_Function)AD_ISR, 0x38},         
+  {(XGATE_Function)SoftwareTrigger0_Handler, (int)&MyData},  // Channel 39 - XGATE Software Trigger 0       
+//  {(XGATE_Function)Timer_Interrupt3_isr, 0x3A},  // Channel 3A - Periodic Interrupt Timer
+  {ErrorHandler, 0x3A},  // Channel 3A - Periodic Interrupt Timer           
+ // {(XGATE_Function)Timer_Interrupt2_isr, 0x3B},  // Channel 3B - Periodic Interrupt Timer
+  {ErrorHandler, 0x3B},  // Channel 3D - Periodic Interrupt Timer           
+  {(XGATE_Function)Timer_Interrupt1_isr, 0x3C},  // Channel 3C - Periodic Interrupt Timer
+ // {ErrorHandler, 0x3C},  // Channel 3D - Periodic Interrupt Timer
+//  {(XGATE_Function)Timer_Interrupt0, 0x3D},  // Channel 3D - Periodic Interrupt Timer           
+  {ErrorHandler, 0x3D},  // Channel 3D - Periodic Interrupt Timer           
+  {ErrorHandler, 0x3E},  // Channel 3E - Reserved                           
+  {ErrorHandler, 0x3F},  // Channel 3F - Autonomous Periodical interrupt API
+  {ErrorHandler, 0x40},  // Channel 40 - Low Voltage interrupt LVI
+  {ErrorHandler, 0x41},  // Channel 41 - IIC1 Bus                 
+  {ErrorHandler, 0x42},  // Channel 42 - SCI5                     
+  {ErrorHandler, 0x43},  // Channel 43 - SCI4                     
+  {ErrorHandler, 0x44},  // Channel 44 - SCI3                     
+  {ErrorHandler, 0x45},  // Channel 45 - SCI2                     
+  {ErrorHandler, 0x46},  // Channel 46 - PWM Emergency Shutdown   
+  {ErrorHandler, 0x47},  // Channel 47 - Port P Interrupt         
+  {ErrorHandler, 0x48},  // Channel 48 - CAN4 transmit            
+  {ErrorHandler, 0x49},  // Channel 49 - CAN4 receive             
+  {ErrorHandler, 0x4A},  // Channel 4A - CAN4 errors              
+  {ErrorHandler, 0x4B},  // Channel 4B - CAN4 wake-up             
+  {ErrorHandler, 0x4C},  // Channel 4C - CAN3 transmit            
+  {ErrorHandler, 0x4D},  // Channel 4D - CAN3 receive             
+  {ErrorHandler, 0x4E},  // Channel 4E - CAN3 errors              
+  {ErrorHandler, 0x4F},  // Channel 4F - CAN3 wake-up             
+  {ErrorHandler, 0x50},  // Channel 50 - CAN2 transmit
+  {ErrorHandler, 0x51},  // Channel 51 - CAN2 receive 
+  {ErrorHandler, 0x52},  // Channel 52 - CAN2 errors  
+  {ErrorHandler, 0x53},  // Channel 53 - CAN2 wake-up 
+  {ErrorHandler, 0x54},  // Channel 54 - CAN1 transmit
+  {ErrorHandler, 0x55},  // Channel 55 - CAN1 receive 
+  {ErrorHandler, 0x56},  // Channel 56 - CAN1 errors  
+  {ErrorHandler, 0x57},  // Channel 57 - CAN1 wake-up 
+  {ErrorHandler, 0x58},  // Channel 58 - CAN0 transmit
+  {ErrorHandler, 0x59},  // Channel 59 - CAN0 receive 
+  {ErrorHandler, 0x5A},  // Channel 5A - CAN0 errors  
+  {ErrorHandler, 0x5B},  // Channel 5B - CAN0 wake-up 
+  {ErrorHandler, 0x5C},  // Channel 5C - FLASH 
+  {ErrorHandler, 0x5D},  // Channel 5D - EEPROM
+  {ErrorHandler, 0x5E},  // Channel 5E - SPI2  
+  {ErrorHandler, 0x5F},  // Channel 5F - SPI1
+  {ErrorHandler, 0x60},  // Channel 60 - IIC0 Bus                         
+  {ErrorHandler, 0x61},  // Channel 61 - Reserved                         
+  {ErrorHandler, 0x62},  // Channel 62 - CRG Self Clock Mode              
+  {ErrorHandler, 0x63},  // Channel 63 - CRG PLL lock                     
+  {ErrorHandler, 0x64},  // Channel 64 - Pulse Accumulator B Overflow     
+  {ErrorHandler, 0x65},  // Channel 65 - Modulus Down Counter underflow   
+  {ErrorHandler, 0x66},  // Channel 66 - Port H 
+ // {(XGATE_Function)PortH_Interrupt_isr, 0x66},  // Channel 66 - Port H                          
+  {ErrorHandler, 0x67},  // Channel 67 - Port J                           
+  {ErrorHandler, 0x68},  // Channel 68 - ATD1                             
+  {ErrorHandler, 0x69},  // Channel 69 - ATD0                             
+  {ErrorHandler, 0x6A},  // Channel 6A - SCI1                             
+  {ErrorHandler, 0x6B},  // Channel 6B - SCI0                             
+  {ErrorHandler, 0x6C},  // Channel 6C - SPI0                             
+  {ErrorHandler, 0x6D},  // Channel 6D - Pulse accumulator input edge     
+  {ErrorHandler, 0x6E},  // Channel 6E - Pulse accumulator A overflow     
+  {ErrorHandler, 0x6F},  // Channel 6F - Enhanced Capture Timer overflow  
+  {ErrorHandler, 0x70},  // Channel 70 - Enhanced Capture Timer channel 7                                 
+  {ErrorHandler, 0x71},  // Channel 71 - Enhanced Capture Timer channel 6 
+  {ErrorHandler, 0x72},  // Channel 72 - Enhanced Capture Timer channel 5 
+  {ErrorHandler, 0x73},  // Channel 73 - Enhanced Capture Timer channel 4 
+  {ErrorHandler, 0x74},  // Channel 74 - Enhanced Capture Timer channel 3 
+  {ErrorHandler, 0x75},  // Channel 75 - Enhanced Capture Timer channel 2 
+  {ErrorHandler, 0x76},  // Channel 76 - Enhanced Capture Timer channel 1 
+  {ErrorHandler, 0x77},  // Channel 77 - Enhanced Capture Timer channel 0 
+  {ErrorHandler, 0x78},  // Channel 78 - Real Time Interrupt 
+  {ErrorHandler, 0x79},  // Channel 79 - IRQ
+};

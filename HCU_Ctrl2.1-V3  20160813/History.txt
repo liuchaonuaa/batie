@@ -1,0 +1,3 @@
+Based on ¡°HCU_Ctrl2.1-V2  20160804 ¼Ó cab bat ok¡±
+Delete suspension_management and related global variables
+Delete telegrams sent to ACM and got from ACM, and related global variables
